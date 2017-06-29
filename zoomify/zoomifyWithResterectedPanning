@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Zoomify</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.1.1/css/ol.css" type="text/css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="https://openlayers.org/en/v4.1.1/build/ol.js"></script>
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    <script>
+      var olWidth = 3450, 
+          olHeight = 2715, 
+          olURL = "images/sectionBackplate/", 
+          olID = "map",
+          olMpa = null, 
+          olView = null,
+          extent = null,
+          defaultZoomValue = 3,
+          mouseClickPoint = null,
+          homeElementHolder = null;
+
+      function initializeOpenLayer(){
+          extent = [0, -olHeight, olWidth, 0];
+          homeElementHolder = document.createElement('div');
+          homeElementHolder.className = 'ol-zoom ol-unselectable ol-control';
+          var source = new ol.source.Zoomify({
+              url: olURL,
+              size: [olWidth, olHeight],
+              crossOrigin: 'anonymous'
+          });
+          view = new ol.View({
+              /*resolutions: source.getTileGrid().getResolutions(),
+              extent: extent*/
+              projection: new ol.proj.Projection({ code: 'ZOOMIFY', units: 'pixels', extent: extent }),
+              center: ol.extent.getCenter(extent),
+              minZoom: defaultZoomValue,
+              maxZoom: 17,
+              zoom: defaultZoomValue
+          });
+
+          map = new ol.Map({
+              layers: [
+                  new ol.layer.Tile({
+                      source: source
+                  })
+              ],
+              target: olID,
+              view: view,
+              controls: [],
+              //controls: ol.control.defaults({zoom: false, rotate: false}),
+              /*controls: ol.control.defaults({
+                  zoom: false
+              }).extend([
+                  new ol.control.Control({
+                      element: homeElementHolder
+                  })
+              ])*/
+              loadTilesWhileAnimating: true,
+              interactions: ol.interaction.defaults({ mouseWheelZoom: true, doubleClickZoom: true, altShiftDragRotate: false, pinchRotate: false })
+          });
+          map.getView().fit(extent);
+
+          view.on('change:center', restrictMapPanning);
+          view.on('change:resolution', restrictMapPanning);
+
+      }
+
+      function restrictMapPanning(){
+          /*if (that.isZoomInAnimation) {
+              return
+          }*/
+          var visible = view.calculateExtent(map.getSize());
+          var center = map.getView().getCenter();
+          var delta;
+          var adjust = false;
+          if ((delta = extent[0] - visible[0]) > 0) {
+              adjust = true;
+              center[0] += delta;
+          } else if ((delta = extent[2] - visible[2]) < 0) {
+              adjust = true;
+              center[0] += delta;
+          }
+          if ((delta = extent[1] - visible[1]) > 0) {
+              adjust = true;
+              center[1] += delta;
+          } else if ((delta = extent[3] - visible[3]) < 0) {
+              adjust = true;
+              center[1] += delta;
+          }
+          if (adjust || mouseClickPoint) {
+              mouseClickPoint = null;
+              view.setCenter(center);
+
+          }   
+
+    </script>
+  </body>
+</html>
